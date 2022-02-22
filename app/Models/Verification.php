@@ -8,6 +8,7 @@ use App\Verifications\UserInfo;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -18,9 +19,16 @@ use Illuminate\Support\Str;
  * @property int $code
  * @property ?string $ip
  * @property ?string $agent
+ * @property int $attempt
  * @property Carbon $created_at
  * @property Subject $subject
  * @property UserInfo $userInfo
+ * @property bool $isExpire
+ *
+ * @method static Verification|null find(string $id)
+ * @method static Collection get()
+ * @method static Verification whereIdentity(string $identity)
+ * @method static Verification whereType(SubjectType $type)
  */
 class Verification extends Model
 {
@@ -50,7 +58,7 @@ class Verification extends Model
     protected function subject(): Attribute
     {
         return new Attribute(
-            get: fn (self $verification) => new Subject($verification->identity, $verification->type),
+            get: fn ($verification) => new Subject($verification->identity, $verification->type),
             set: fn (Subject $subject) => [
                 'identity' => $subject->identity,
                 'type' => $subject->type,
@@ -61,11 +69,18 @@ class Verification extends Model
     protected function userInfo(): Attribute
     {
         return new Attribute(
-            get: fn (self $verification) => new UserInfo($verification->ip, $verification->agent),
+            get: fn ($verification) => new UserInfo($verification->ip, $verification->agent),
             set: fn (UserInfo $userInfo) => [
                 'ip' => $userInfo->ip,
                 'agent' => $userInfo->agent,
             ],
+        );
+    }
+
+    protected function isExpire(): Attribute
+    {
+        return new Attribute(
+            get: fn ($verification) => $this->attempt >= 5 || Carbon::now()->diffInMinutes($this->created_at) >= 5,
         );
     }
 }

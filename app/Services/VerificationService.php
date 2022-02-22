@@ -4,11 +4,11 @@ namespace App\Services;
 
 use App\Events\Verifications\VerificationConfirmedEvent;
 use App\Events\Verifications\VerificationCreatedEvent;
+use App\Exceptions\DublicatedVerificationException;
 use App\Models\Verification;
 use App\Verifications\Subject;
 use App\Verifications\UserInfo;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Support\Facades\Event;
 
 class VerificationService
 {
@@ -17,11 +17,23 @@ class VerificationService
 
     private function generateCode(): int
     {
-        return rand(10000000, 99999999);
+        return random_int(10000000, 99999999);
     }
 
+    /**
+     * @throws DublicatedVerificationException
+     */
     public function storeVerification(Subject $subject, UserInfo $userInfo): Verification
     {
+        $existVerification = Verification::whereIdentity($subject->identity)
+            ->whereType($subject->type)
+            ->get()
+            ->filter(fn(Verification $verification) => !$verification->isExpire);
+
+        if ($existVerification->count() > 0) {
+            throw new DublicatedVerificationException();
+        }
+
         $verification = new Verification();
         $verification->subject = $subject;
         $verification->userInfo = $userInfo;
@@ -41,14 +53,17 @@ class VerificationService
         return $verification;
     }
 
-    public function confirmVerification(Verification $verification, int $code, UserInfo $userInfo): bool
+    public function confirmVerification(Verification $verification, int $code): bool
     {
-        if (
-            !$verification->userInfo->equalTo($userInfo)
-            || $verification->code !== $code
-        ) {
+        $verification->attempt++;
+        $verification->save();
+
+        if ($verification->code !== $code) {
             return false;
         }
+
+        $verification->confirmed = true;
+        $verification->save();
 
         $this->eventDispatcher->dispatch(
             new VerificationConfirmedEvent(

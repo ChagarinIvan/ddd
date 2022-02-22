@@ -57,7 +57,7 @@ class NotificationService
             return $templateBody->body();
         }
 
-        throw new \RuntimeException("Template render error. {$templateBody->status()}, {$templateBody->body()}");
+        throw new \RuntimeException("Template render error. {$templateBody->status()}");
     }
 
     private function channelTypeFromSubjectType(SubjectType $type): ChannelType

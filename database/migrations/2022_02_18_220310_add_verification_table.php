@@ -21,6 +21,7 @@ return new class extends Migration
             $table->integer('code');
             $table->string('ip')->nullable();
             $table->string('agent')->nullable();
+            $table->smallInteger('attempt')->nullable(false)->default(0);
             $table->timestamps();
         });
     }

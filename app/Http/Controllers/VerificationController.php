@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\DublicatedVerificationException;
 use App\Exceptions\MalformedJsonException;
 use App\Models\Verification;
 use App\Services\VerificationService;
@@ -32,6 +33,8 @@ class VerificationController extends Controller
             );
 
             return response()->json($verification->id, Response::HTTP_CREATED);
+        } catch (DublicatedVerificationException) {
+            return response('', Response::HTTP_CONFLICT);
         } catch (MalformedJsonException) {
             return response('', Response::HTTP_BAD_REQUEST);
         } catch (ValidationException) {
@@ -39,14 +42,32 @@ class VerificationController extends Controller
         }
     }
 
-    public function confirm(string $id, Request $request): JsonResponse
+    public function confirm(string $id, Request $request): Response
     {
         $verification = Verification::find($id);
-        $userInfo = $this->getUserInfo($request);
-        $code = (int)$request->get('code');
-        $this->service->confirmVerification($verification, $code, $userInfo);
+        if ($verification === null) {
+            return response('', Response::HTTP_NOT_FOUND);
+        }
+        if ($verification->isExpire) {
+            return response('', Response::HTTP_GONE);
+        }
+        if (!$verification->userInfo->equalTo($this->getUserInfo($request))) {
+            return response('', Response::HTTP_FORBIDDEN);
+        }
+        if ($verification->confirmed) {
+            return response('', Response::HTTP_NO_CONTENT);
+        }
 
-        return response()->json([], Response::HTTP_NO_CONTENT);
+        try {
+            $code = $this->getCode($request);
+            if ($this->service->confirmVerification($verification, $code)) {
+                return response('', Response::HTTP_NO_CONTENT);
+            }
+
+            return response('', Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (MalformedJsonException) {
+            return response('', Response::HTTP_BAD_REQUEST);
+        }
     }
 
     /**
@@ -55,8 +76,8 @@ class VerificationController extends Controller
      */
     private function extractSubjectFromRequest(Request $request): Subject
     {
-        $subjectData = $request->json()->all();
-        if ($subjectData === []) {
+        $json = $request->json();
+        if ($json === null || ($subjectData = $json->all()) === []) {
             throw new MalformedJsonException();
         }
 
@@ -69,6 +90,19 @@ class VerificationController extends Controller
             $subjectData['subject']['identity'],
             SubjectType::from($subjectData['subject']['type'])
         );
+    }
+
+    /**
+     * @throws MalformedJsonException
+     */
+    private function getCode(Request $request): int
+    {
+        $json = $request->json();
+        if ($json === null || ($codeDate = $json->all()) === [] || !array_key_exists('code', $codeDate)) {
+            throw new MalformedJsonException();
+        }
+
+        return (int)$codeDate;
     }
 
     private function getUserInfo(Request $request): UserInfo

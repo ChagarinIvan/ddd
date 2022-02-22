@@ -9,7 +9,6 @@ use Illuminate\Validation\Factory as ValidatorFactory;
 use Illuminate\Validation\ValidationException;
 use Laravel\Lumen\Http\Request;
 use Laravel\Lumen\Routing\Controller;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 class TemplateController extends Controller
@@ -17,15 +16,12 @@ class TemplateController extends Controller
     public function __construct(
         private readonly TemplateService $service,
         private readonly ValidatorFactory $validator,
-        private LoggerInterface $logger
     ) {}
 
     public function render(Request $request): Response
     {
-        $this->logger->info('Template controller', []);
-
-        $templateData = $request->json()->all();
-        if ($templateData === []) {
+        $json = $request->json();
+        if ($json === null || ($templateData = $json->all()) === []) {
             return response('', Response::HTTP_BAD_REQUEST);
         }
         try {
