@@ -31,12 +31,14 @@ class NotificationService
         $this->eventDispatcher->dispatch(new NotificationCreatedEvent($notification));
 
         $sender = NotificationSenderFactoryType::getSender($notification->channel);
-        $sender->send($notification->recipient, $notification->body);
+        $dispatched = $sender->send($notification->recipient, $notification->body);
 
-        $notification->dispatched = true;
-        $notification->save();
+        if ($dispatched) {
+            $notification->dispatched = true;
+            $notification->save();
 
-        $this->eventDispatcher->dispatch(new NotificationDispatchedEvent($notification));
+            $this->eventDispatcher->dispatch(new NotificationDispatchedEvent($notification));
+        }
     }
 
     private function renderTemplate(TemplateType $templateType, int $code): string
@@ -44,7 +46,7 @@ class NotificationService
         $templateBody = $this->httpFactory->contentType("application/json")
             ->bodyFormat('json')
             ->withHeaders([
-                'Authorization' => 'Bearer '.md5(config('APP_KEY'))
+                'Authorization' => 'Bearer '.md5(env('APP_KEY'))
             ])
             ->post(route('render'), [
                 'slug' => $templateType->value,

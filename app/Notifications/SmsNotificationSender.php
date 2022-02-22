@@ -4,8 +4,11 @@ namespace App\Notifications;
 
 class SmsNotificationSender implements NotificationSenderInterface
 {
-    public function send(string $recipient, string $body): void
+    public function __construct(private readonly GotifyApiClient $apiClient)
+    {}
+
+    public function send(string $recipient, string $body): bool
     {
-        // TODO: Implement send() method.
+        return $this->apiClient->postMessage($recipient, $body);
     }
 }

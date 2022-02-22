@@ -4,8 +4,8 @@ namespace App\Notifications;
 
 class EmailNotificationSender implements NotificationSenderInterface
 {
-    public function send(string $recipient, string $body): void
+    public function send(string $recipient, string $body): bool
     {
-        // TODO: Implement send() method.
+        return true;
     }
 }
