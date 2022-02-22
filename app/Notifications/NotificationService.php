@@ -48,7 +48,7 @@ class NotificationService
             ->withHeaders([
                 'Authorization' => 'Bearer '.md5(env('APP_KEY'))
             ])
-            ->post(route('render'), [
+            ->post('nginx:80/templates/render', [
                 'slug' => $templateType->value,
                 'variables' => [
                     'code' => $code,

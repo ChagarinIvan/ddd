@@ -21,7 +21,7 @@ class GotifyApiClient
 
     public function postMessage(string $recipient, string $body): bool
     {
-        $message = $this->httpFactory->post('127.0.0.1:'.env('GOTIFY_PORT'), [
+        $message = $this->httpFactory->post('gotify:'.env('GOTIFY_PORT'), [
                 'message' => $body,
                 'title' => $recipient,
             ]);
