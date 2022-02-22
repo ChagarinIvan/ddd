@@ -34,6 +34,9 @@ class Verification extends Model
 {
     protected $table = 'verifications';
     public $timestamps = true;
+    protected $casts = [
+        'type' => SubjectType::class,
+    ];
 
     protected static function boot()
     {
@@ -58,7 +61,7 @@ class Verification extends Model
     protected function subject(): Attribute
     {
         return new Attribute(
-            get: fn ($verification) => new Subject($verification->identity, $verification->type),
+            get: fn () => new Subject($this->identity, $this->type),
             set: fn (Subject $subject) => [
                 'identity' => $subject->identity,
                 'type' => $subject->type,
@@ -69,7 +72,7 @@ class Verification extends Model
     protected function userInfo(): Attribute
     {
         return new Attribute(
-            get: fn ($verification) => new UserInfo($verification->ip, $verification->agent),
+            get: fn () => new UserInfo($this->ip, $this->agent),
             set: fn (UserInfo $userInfo) => [
                 'ip' => $userInfo->ip,
                 'agent' => $userInfo->agent,
@@ -80,7 +83,7 @@ class Verification extends Model
     protected function isExpire(): Attribute
     {
         return new Attribute(
-            get: fn ($verification) => $this->attempt >= 5 || Carbon::now()->diffInMinutes($this->created_at) >= 5,
+            get: fn () => $this->attempt >= 5 || Carbon::now()->diffInMinutes($this->created_at) >= 5,
         );
     }
 }

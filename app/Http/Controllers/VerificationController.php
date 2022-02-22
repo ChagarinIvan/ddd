@@ -9,7 +9,6 @@ use App\Services\VerificationService;
 use App\Verifications\Subject;
 use App\Verifications\SubjectType;
 use App\Verifications\UserInfo;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Factory as ValidatorFactory;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\ValidationException;
@@ -98,11 +97,11 @@ class VerificationController extends Controller
     private function getCode(Request $request): int
     {
         $json = $request->json();
-        if ($json === null || ($codeDate = $json->all()) === [] || !array_key_exists('code', $codeDate)) {
+        if ($json === null || ($codeData = $json->all()) === [] || !array_key_exists('code', $codeData)) {
             throw new MalformedJsonException();
         }
 
-        return (int)$codeDate;
+        return (int)$codeData['code'];
     }
 
     private function getUserInfo(Request $request): UserInfo
