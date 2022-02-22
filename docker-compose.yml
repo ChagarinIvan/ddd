@@ -22,7 +22,7 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     ports:
-      - 80:80
+      - 8000:80
     volumes:
       - ./:/var/www
       - ./enviroment/nginx/conf.d:/etc/nginx/conf.d/
@@ -48,17 +48,6 @@ services:
       - "6382:6379"
     networks:
       - mynetwork
-
-  gotify:
-    image: gotify/server
-    container_name: gotify
-    restart: unless-stopped
-    ports:
-      - 8008:80
-    environment:
-      - TZ='Africa/Casablanca'
-    volumes:
-      - ./data:/app/data
 
 networks:
   mynetwork:
