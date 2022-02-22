@@ -46,9 +46,9 @@ class NotificationService
         $templateBody = $this->httpFactory->contentType("application/json")
             ->bodyFormat('json')
             ->withHeaders([
-                'Authorization' => 'Bearer '.md5(env('APP_KEY'))
+                'Authorization' => 'Bearer '.md5(config('APP_KEY'))
             ])
-            ->post(route('render'), [
+            ->post('http://nginx:80/templates/render', [
                 'slug' => $templateType->value,
                 'variables' => [
                     'code' => $code,
